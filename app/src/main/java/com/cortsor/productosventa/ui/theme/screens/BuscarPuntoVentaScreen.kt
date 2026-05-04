@@ -1,6 +1,5 @@
 package com.cortsor.productosventa.ui.theme.screens
 
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,11 +12,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType // ¡Nueva importación necesaria!
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.cortsor.productosventa.viewmodel.BuscarPuntoViewModel
+import com.cortsor.productosventa.viewModel.BuscarPuntoViewModel
 
 @Composable
 fun BuscarPuntoVentaScreen(
@@ -27,7 +27,7 @@ fun BuscarPuntoVentaScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White),
+            .background(Color.White), // Manteniendo tu fondo blanco impecable
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -40,10 +40,13 @@ fun BuscarPuntoVentaScreen(
                 fontSize = 15.sp,
                 modifier = Modifier.padding(bottom = 28.dp)
             )
-
             OutlinedTextField(
                 value = viewModel.ip,
-                onValueChange = { viewModel.ip = it },
+                onValueChange = { newValue ->
+                    // FILTRO: Solo permite números y puntos
+                    val filteredIp = newValue.filter { it.isDigit() || it == '.' }
+                    viewModel.ip = filteredIp
+                },
                 placeholder = { Text("Ingrese IP", textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
                 textStyle = TextStyle(textAlign = TextAlign.Center, color = Color.Black, fontSize = 15.sp),
                 singleLine = true,
@@ -54,7 +57,10 @@ fun BuscarPuntoVentaScreen(
                     unfocusedBorderColor = Color.Black.copy(alpha = 0.1f),
                     focusedBorderColor = Color.Black
                 ),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Decimal, // Fuerza a abrir el teclado numérico
+                    imeAction = ImeAction.Go
+                ),
                 keyboardActions = KeyboardActions(onGo = {
                     if (viewModel.ip.isNotBlank()) onNavigateToAddProduct()
                 }),
@@ -62,6 +68,24 @@ fun BuscarPuntoVentaScreen(
                     .height(50.dp)
                     .width(153.dp)
             )
+
+            // Espacio entre el input y el botón
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // NUEVO BOTÓN "ACCEDER"
+            Button(
+                onClick = {
+                    if (viewModel.ip.isNotBlank()) onNavigateToAddProduct()
+                },
+                modifier = Modifier
+                    .height(45.dp)
+                    .width(153.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF62C3AF)), // Verde de tu app
+                shape = RoundedCornerShape(5.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+            ) {
+                Text("Acceder", color = Color.White, fontSize = 15.sp)
+            }
         }
     }
 }

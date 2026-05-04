@@ -1,7 +1,5 @@
 package com.cortsor.productosventa.ui.theme.screens
 
-package com.tuempresa.tuapp.ui.screens
-
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -18,15 +16,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.cortsor.productosventa.ui.components.PhotoModal
+import com.cortsor.productosventa.ui.theme.components.PhotoModal
 import com.cortsor.productosventa.viewModel.AddProductViewModel
 
 @Composable
 fun AddProductScreen(viewModel: AddProductViewModel = viewModel()) {
     val scrollState = rememberScrollState()
+    val context = LocalContext.current // <-- Obtiene el contexto para el Toast
 
     Column(
         modifier = Modifier
@@ -36,7 +36,6 @@ fun AddProductScreen(viewModel: AddProductViewModel = viewModel()) {
             .padding(horizontal = 38.dp, vertical = 73.dp)
     ) {
         Text("Añadir productos", fontSize = 20.sp, color = Color.Black, modifier = Modifier.padding(bottom = 32.dp))
-
         Text("Imagen", fontSize = 15.sp, color = Color.Black)
         Text("Click para subir imagen", fontSize = 13.sp, color = Color.Gray, modifier = Modifier.padding(bottom = 12.dp))
 
@@ -54,6 +53,7 @@ fun AddProductScreen(viewModel: AddProductViewModel = viewModel()) {
                     .background(Color(0xFFD9D9D9))
                     .clickable { viewModel.isPhotoModalOpen = true }
             ) {
+                // Al regresar del Modal, mostrará la imagen que dejaste seleccionada
                 val currentBitmap = if (viewModel.bgMode == "sin") viewModel.noBgBitmap else viewModel.originalBitmap
                 if (currentBitmap != null) {
                     Image(
@@ -80,6 +80,7 @@ fun AddProductScreen(viewModel: AddProductViewModel = viewModel()) {
             SaleTypeButton("Por pieza", viewModel.saleType == "unit", Modifier.weight(1f)) { viewModel.saleType = "unit" }
             SaleTypeButton("A granel", viewModel.saleType == "bulk", Modifier.weight(1f)) { viewModel.saleType = "bulk" }
         }
+
         if (viewModel.saleType == "bulk") {
             Text("El precio se calcula por peso/volumen.", fontSize = 12.sp, color = Color.Gray, modifier = Modifier.padding(top = 4.dp, bottom = 24.dp))
         } else {
@@ -99,19 +100,7 @@ fun AddProductScreen(viewModel: AddProductViewModel = viewModel()) {
             Text("Unidad de venta", fontSize = 15.sp, color = Color.Black, modifier = Modifier.padding(bottom = 8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 listOf("G", "KG", "ML", "L").forEach { unit ->
-                    val isSelected = viewModel.sellUnit == unit
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(39.dp)
-                            .clip(RoundedCornerShape(5.dp))
-                            .background(if (isSelected) Color(0xFF62C3AF).copy(alpha = 0.1f) else Color(0xFFF9F9F9))
-                            .border(1.dp, if (isSelected) Color(0xFF62C3AF) else Color.Black.copy(alpha = 0.1f), RoundedCornerShape(5.dp))
-                            .clickable { viewModel.sellUnit = unit }
-                    ) {
-                        Text(unit, color = if (isSelected) Color(0xFF62C3AF) else Color.Black)
-                    }
+                    UnitChip(unit, viewModel.sellUnit == unit) { viewModel.sellUnit = unit }
                 }
             }
             Spacer(modifier = Modifier.height(24.dp))
@@ -124,12 +113,12 @@ fun AddProductScreen(viewModel: AddProductViewModel = viewModel()) {
 
         Spacer(modifier = Modifier.height(48.dp))
         Button(
-            onClick = { /* Guardar lógica */ },
+            onClick = { viewModel.saveProduct(context) }, // <--- Función conectada
             modifier = Modifier.align(Alignment.CenterHorizontally).height(45.dp).width(150.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF9F9F9)),
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
         ) {
-            Text("Aguardar Producto", color = Color.Black)
+            Text("Guardar Producto", color = Color.Black)
         }
     }
 
@@ -167,5 +156,20 @@ fun SaleTypeButton(text: String, isSelected: Boolean, modifier: Modifier = Modif
             .clickable { onClick() }
     ) {
         Text(text, color = Color.Black, fontSize = 14.sp)
+    }
+}
+
+@Composable
+fun UnitChip(text: String, isSelected: Boolean, onClick: () -> Unit) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .size(50.dp, 40.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (isSelected) Color(0xFF62C3AF) else Color(0xFFF9F9F9))
+            .clickable { onClick() }
+            .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
+    ) {
+        Text(text, color = if (isSelected) Color.White else Color.Black)
     }
 }
