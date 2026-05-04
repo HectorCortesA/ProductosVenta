@@ -2,105 +2,154 @@ package com.cortsor.productosventa.viewModel
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.net.Uri
+import android.util.Base64
 import android.widget.Toast
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.cortsor.productosventa.model.*
+import com.cortsor.productosventa.network.RetrofitClient
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.segmentation.subject.SubjectSegmentation
 import com.google.mlkit.vision.segmentation.subject.SubjectSegmenterOptions
+import kotlinx.coroutines.launch
+import java.io.ByteArrayOutputStream
 
 class AddProductViewModel : ViewModel() {
-    var saleType by mutableStateOf("unit")
+    // Estados del formulario
+    var sku by mutableStateOf("")
     var name by mutableStateOf("")
+    var description by mutableStateOf("")
     var price by mutableStateOf("")
     var quantity by mutableStateOf("")
     var minQuantity by mutableStateOf("")
-    var sellUnit by mutableStateOf("KG")
+    var saleType by mutableStateOf("unit")
+    var sellUnit by mutableStateOf("pz")
 
-    // Estados de la imagen
+    // Gestión de Categorías
+    var categories = mutableStateListOf<String>()
+    var selectedCategory by mutableStateOf("General")
+    var isAddingCategory by mutableStateOf(false)
+    var newCategoryName by mutableStateOf("")
+    var isLoadingCategories by mutableStateOf(false)
+
+    // Imagen
     var originalBitmap by mutableStateOf<Bitmap?>(null)
     var noBgBitmap by mutableStateOf<Bitmap?>(null)
-    var bgMode by mutableStateOf("con") // "con" o "sin" fondo
+    var imageMime by mutableStateOf<String?>(null)
+    var bgMode by mutableStateOf("con")
     var isPhotoModalOpen by mutableStateOf(false)
+    var isProcessing by mutableStateOf(false)
 
-    // 1. Solo carga la imagen cuando la seleccionas (Se queda "Con fondo")
-    fun onImageSelected(context: Context, uri: Uri) {
-        try {
-            val inputStream = context.contentResolver.openInputStream(uri)
-            // IMPORTANTE: Se fuerza el formato ARGB_8888 para que ML Kit no lance error
-            val bitmap = BitmapFactory.decodeStream(inputStream)?.copy(Bitmap.Config.ARGB_8888, true)
+    init {
+        fetchCategories()
+    }
 
-            if (bitmap != null) {
-                originalBitmap = bitmap
-                noBgBitmap = null // Resetea la versión sin fondo anterior si sube una foto nueva
-                bgMode = "con"
+    fun fetchCategories() {
+        viewModelScope.launch {
+            isLoadingCategories = true
+            try {
+                // 1. Obtenemos la lista de objetos del servidor
+                val response: List<CategoryResponse> = RetrofitClient.instance.getCategories()
+
+                categories.clear()
+
+                // 2. Extraemos el NOMBRE (it.category)
+                val names: List<String> = response.map { it.category }
+
+                if (names.isNotEmpty()) {
+                    categories.addAll(names)
+                    // Seleccionar la primera por defecto si no hay una válida seleccionada
+                    if (selectedCategory == "General" || !names.contains(selectedCategory)) {
+                        selectedCategory = names[0]
+                    }
+                } else {
+                    if (!categories.contains("General")) categories.add("General")
+                    selectedCategory = "General"
+                }
+            } catch (e: Exception) {
+                if (categories.isEmpty()) {
+                    categories.add("General")
+                    selectedCategory = "General"
+                }
+                e.printStackTrace()
+            } finally {
+                isLoadingCategories = false
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Toast.makeText(context, "Error al cargar la imagen", Toast.LENGTH_SHORT).show()
         }
     }
 
-    // 2. Ejecuta la IA solo cuando haces clic en el botón "Sin fondo"
-    fun removeBackground(context: Context) {
-        // Si ya había procesado esta imagen antes, no repite el trabajo, solo la muestra
-        if (noBgBitmap != null) {
-            bgMode = "sin"
-            return
+    fun addCategory() {
+        val trimmed = newCategoryName.trim()
+        if (trimmed.isNotEmpty() && !categories.contains(trimmed)) {
+            categories.add(trimmed)
+            selectedCategory = trimmed
         }
-
-        val currentBitmap = originalBitmap
-        if (currentBitmap == null) {
-            Toast.makeText(context, "Primero selecciona una foto", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        try {
-            Toast.makeText(context, "Procesando imagen...", Toast.LENGTH_SHORT).show()
-
-            val image = InputImage.fromBitmap(currentBitmap, 0)
-            val options = SubjectSegmenterOptions.Builder()
-                .enableForegroundBitmap() // Esto extrae el objeto sin fondo
-                .build()
-
-            val segmenter = SubjectSegmentation.getClient(options)
-
-            segmenter.process(image)
-                .addOnSuccessListener { result ->
-                    noBgBitmap = result.foregroundBitmap
-                    bgMode = "sin" // Cambia la vista automáticamente al terminar
-                    Toast.makeText(context, "Fondo eliminado con éxito", Toast.LENGTH_SHORT).show()
-                }
-                .addOnFailureListener { e ->
-                    e.printStackTrace()
-                    Toast.makeText(context, "Error al procesar el fondo", Toast.LENGTH_SHORT).show()
-                }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Toast.makeText(context, "Error de la IA al eliminar el fondo", Toast.LENGTH_SHORT).show()
-        }
+        newCategoryName = ""
+        isAddingCategory = false
     }
 
-    // 3. Guardar y resetear
+    fun processBackgroundRemoval(bitmap: Bitmap, mimeType: String?) {
+        isProcessing = true
+        originalBitmap = bitmap
+        imageMime = mimeType
+        val image = InputImage.fromBitmap(bitmap, 0)
+        val options = SubjectSegmenterOptions.Builder().enableForegroundBitmap().build()
+        val segmenter = SubjectSegmentation.getClient(options)
+        segmenter.process(image)
+            .addOnSuccessListener { result ->
+                noBgBitmap = result.foregroundBitmap
+                isProcessing = false
+            }
+            .addOnFailureListener { isProcessing = false }
+    }
+
+    private fun bitmapToBase64(bitmap: Bitmap?): String? {
+        if (bitmap == null) return null
+        val outputStream = ByteArrayOutputStream()
+        val format = if (bgMode == "sin") Bitmap.CompressFormat.PNG else Bitmap.CompressFormat.JPEG
+        bitmap.compress(format, 70, outputStream)
+        return Base64.encodeToString(outputStream.toByteArray(), Base64.NO_WRAP)
+    }
+
     fun saveProduct(context: Context) {
         if (name.isBlank() || price.isBlank()) {
-            Toast.makeText(context, "Por favor llena los campos obligatorios", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Nombre y Precio son obligatorios", Toast.LENGTH_SHORT).show()
             return
         }
+        viewModelScope.launch {
+            try {
+                val bitmapToSend = if (bgMode == "sin") noBgBitmap else originalBitmap
+                val minVal = minQuantity.toDoubleOrNull() ?: 0.0
+                val finalMime = if (bgMode == "sin") "image/png" else imageMime
 
-        Toast.makeText(context, "¡Producto '$name' guardado exitosamente!", Toast.LENGTH_LONG).show()
+                val request = ProductRequest(
+                    sku = sku.ifBlank { null },
+                    name = name,
+                    category = selectedCategory,
+                    description = description.ifBlank { null },
+                    stock_type = saleType,
+                    stock_quantity = if (saleType == "unit") quantity.toDoubleOrNull() ?: 0.0 else 0.0,
+                    stock_grams = if (saleType == "bulk") (quantity.toDoubleOrNull() ?: 0.0) * 1000 else 0.0,
+                    min_stock_quantity = if (saleType == "unit") minVal else 0.0,
+                    min_stock_grams = if (saleType == "bulk") minVal * 1000 else 0.0,
+                    price = price.toDoubleOrNull() ?: 0.0,
+                    price_per_gram = if (saleType == "bulk") (price.toDoubleOrNull() ?: 0.0) / 1000 else 0.0,
+                    display_unit = sellUnit,
+                    imageBase64 = bitmapToBase64(bitmapToSend),
+                    image_mime = finalMime
+                )
+                RetrofitClient.instance.createProduct(request)
+                Toast.makeText(context, "Guardado con éxito", Toast.LENGTH_SHORT).show()
+                clearForm()
+            } catch (e: Exception) {
+                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
 
-        // Limpiar formulario tras guardar
-        name = ""
-        price = ""
-        quantity = ""
-        minQuantity = ""
-        originalBitmap = null
-        noBgBitmap = null
-        bgMode = "con"
+    private fun clearForm() {
+        name = ""; price = ""; quantity = ""; minQuantity = ""; sku = ""; description = ""
+        originalBitmap = null; noBgBitmap = null; imageMime = null; bgMode = "con"
     }
 }

@@ -1,15 +1,15 @@
 package com.cortsor.productosventa.ui.theme.screens
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,7 +26,7 @@ import com.cortsor.productosventa.viewModel.AddProductViewModel
 @Composable
 fun AddProductScreen(viewModel: AddProductViewModel = viewModel()) {
     val scrollState = rememberScrollState()
-    val context = LocalContext.current // <-- Obtiene el contexto para el Toast
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -36,69 +36,84 @@ fun AddProductScreen(viewModel: AddProductViewModel = viewModel()) {
             .padding(horizontal = 38.dp, vertical = 73.dp)
     ) {
         Text("Añadir productos", fontSize = 20.sp, color = Color.Black, modifier = Modifier.padding(bottom = 32.dp))
-        Text("Imagen", fontSize = 15.sp, color = Color.Black)
-        Text("Click para subir imagen", fontSize = 13.sp, color = Color.Gray, modifier = Modifier.padding(bottom = 12.dp))
 
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 32.dp)
-        ) {
+        // --- IMAGEN ---
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)) {
             Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .size(100.dp)
-                    .clip(RoundedCornerShape(19.dp))
-                    .background(Color(0xFFD9D9D9))
-                    .clickable { viewModel.isPhotoModalOpen = true }
+                modifier = Modifier.size(100.dp).clip(RoundedCornerShape(19.dp)).background(Color(0xFFD9D9D9))
+                    .clickable { viewModel.isPhotoModalOpen = true },
+                contentAlignment = Alignment.Center
             ) {
-                // Al regresar del Modal, mostrará la imagen que dejaste seleccionada
-                val currentBitmap = if (viewModel.bgMode == "sin") viewModel.noBgBitmap else viewModel.originalBitmap
-                if (currentBitmap != null) {
-                    Image(
-                        bitmap = currentBitmap.asImageBitmap(),
-                        contentDescription = "Producto",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                val bitmap = if (viewModel.bgMode == "sin") viewModel.noBgBitmap else viewModel.originalBitmap
+                if (bitmap != null) {
+                    Image(bitmap.asImageBitmap(), null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                 } else {
-                    Text("Agregar foto", fontSize = 12.sp, color = Color.Gray)
+                    Text("+", fontSize = 24.sp, color = Color.Gray)
                 }
             }
         }
 
-        Text("Tipo de venta", fontSize = 15.sp, color = Color.Black, modifier = Modifier.padding(bottom = 12.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(Color(0xFFD9D9D9))
-                .padding(4.dp)
-        ) {
-            SaleTypeButton("Por pieza", viewModel.saleType == "unit", Modifier.weight(1f)) { viewModel.saleType = "unit" }
-            SaleTypeButton("A granel", viewModel.saleType == "bulk", Modifier.weight(1f)) { viewModel.saleType = "bulk" }
+        // --- SKU ---
+        FormField(label = "SKU (Opcional)", value = viewModel.sku, onValueChange = { viewModel.sku = it })
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // --- CATEGORÍA ---
+        Text("Categoría", fontSize = 15.sp, color = Color.Black, modifier = Modifier.padding(bottom = 8.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            var expanded by remember { mutableStateOf(false) }
+            Box(modifier = Modifier.weight(1f)) {
+                OutlinedTextField(
+                    value = if (viewModel.isLoadingCategories) "Cargando..." else viewModel.selectedCategory,
+                    onValueChange = {},
+                    readOnly = true,
+                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    shape = RoundedCornerShape(5.dp),
+                    trailingIcon = { IconButton(onClick = { expanded = true }) { Icon(Icons.Default.ArrowDropDown, null) } },
+                    colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = Color(0xFFF9F9F9))
+                )
+                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                    viewModel.categories.forEach { cat ->
+                        DropdownMenuItem(text = { Text(cat) }, onClick = { viewModel.selectedCategory = cat; expanded = false })
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            IconButton(
+                onClick = { viewModel.isAddingCategory = true },
+                modifier = Modifier.size(50.dp).background(Color(0xFF62C3AF), RoundedCornerShape(5.dp))
+            ) { Icon(Icons.Default.Add, null, tint = Color.White) }
         }
 
-        if (viewModel.saleType == "bulk") {
-            Text("El precio se calcula por peso/volumen.", fontSize = 12.sp, color = Color.Gray, modifier = Modifier.padding(top = 4.dp, bottom = 24.dp))
-        } else {
-            Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // --- TIPO VENTA ---
+        Row(modifier = Modifier.fillMaxWidth().height(48.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFD9D9D9)).padding(4.dp)) {
+            SaleTypeButton("Por pieza", viewModel.saleType == "unit", Modifier.weight(1f)) {
+                viewModel.saleType = "unit"
+                viewModel.sellUnit = "pz"
+            }
+            SaleTypeButton("A granel", viewModel.saleType == "bulk", Modifier.weight(1f)) {
+                viewModel.saleType = "bulk"
+                viewModel.sellUnit = "KG"
+            }
         }
+
+        Spacer(modifier = Modifier.height(24.dp))
 
         FormField(label = "Nombre *", value = viewModel.name, onValueChange = { viewModel.name = it })
         Spacer(modifier = Modifier.height(24.dp))
+        FormField(label = "Descripción", value = viewModel.description, onValueChange = { viewModel.description = it })
+        Spacer(modifier = Modifier.height(24.dp))
 
+        // --- PRECIOS Y STOCK MÍNIMO ---
         if (viewModel.saleType == "unit") {
             FormField(label = "Precio", value = viewModel.price, onValueChange = { viewModel.price = it })
             Spacer(modifier = Modifier.height(24.dp))
             FormField(label = "Stock (piezas)", value = viewModel.quantity, onValueChange = { viewModel.quantity = it })
             Spacer(modifier = Modifier.height(24.dp))
-            FormField(label = "Mínimo (piezas)", value = viewModel.minQuantity, onValueChange = { viewModel.minQuantity = it })
+            FormField(label = "Stock Mínimo", value = viewModel.minQuantity, onValueChange = { viewModel.minQuantity = it })
         } else {
-            Text("Unidad de venta", fontSize = 15.sp, color = Color.Black, modifier = Modifier.padding(bottom = 8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("G", "KG", "ML", "L").forEach { unit ->
                     UnitChip(unit, viewModel.sellUnit == unit) { viewModel.sellUnit = unit }
                 }
@@ -106,20 +121,29 @@ fun AddProductScreen(viewModel: AddProductViewModel = viewModel()) {
             Spacer(modifier = Modifier.height(24.dp))
             FormField(label = "Precio por ${viewModel.sellUnit.lowercase()}", value = viewModel.price, onValueChange = { viewModel.price = it })
             Spacer(modifier = Modifier.height(24.dp))
-            FormField(label = "Stock (${viewModel.sellUnit.lowercase()})", value = viewModel.quantity, onValueChange = { viewModel.quantity = it })
+            FormField(label = "Stock (${viewModel.sellUnit})", value = viewModel.quantity, onValueChange = { viewModel.quantity = it })
             Spacer(modifier = Modifier.height(24.dp))
-            FormField(label = "Mínimo (${viewModel.sellUnit.lowercase()})", value = viewModel.minQuantity, onValueChange = { viewModel.minQuantity = it })
+            FormField(label = "Stock Mínimo (${viewModel.sellUnit})", value = viewModel.minQuantity, onValueChange = { viewModel.minQuantity = it })
         }
 
         Spacer(modifier = Modifier.height(48.dp))
         Button(
-            onClick = { viewModel.saveProduct(context) }, // <--- Función conectada
-            modifier = Modifier.align(Alignment.CenterHorizontally).height(45.dp).width(150.dp),
+            onClick = { viewModel.saveProduct(context) },
+            modifier = Modifier.align(Alignment.CenterHorizontally).height(45.dp).width(180.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF9F9F9)),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+            elevation = ButtonDefaults.buttonElevation(2.dp)
         ) {
             Text("Guardar Producto", color = Color.Black)
         }
+    }
+
+    if (viewModel.isAddingCategory) {
+        AlertDialog(
+            onDismissRequest = { viewModel.isAddingCategory = false },
+            title = { Text("Nueva Categoría") },
+            text = { OutlinedTextField(value = viewModel.newCategoryName, onValueChange = { viewModel.newCategoryName = it }) },
+            confirmButton = { TextButton(onClick = { viewModel.addCategory() }) { Text("Agregar") } }
+        )
     }
 
     if (viewModel.isPhotoModalOpen) {
@@ -127,49 +151,35 @@ fun AddProductScreen(viewModel: AddProductViewModel = viewModel()) {
     }
 }
 
+// --- COMPONENTES AUXILIARES ---
+
 @Composable
 fun FormField(label: String, value: String, onValueChange: (String) -> Unit) {
     Column {
-        Text(label, fontSize = 15.sp, color = Color.Black, modifier = Modifier.padding(bottom = 8.dp))
+        Text(label, fontSize = 15.sp, modifier = Modifier.padding(bottom = 8.dp))
         OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
-            modifier = Modifier.fillMaxWidth().height(50.dp),
+            value = value, onValueChange = onValueChange, modifier = Modifier.fillMaxWidth().height(50.dp),
             shape = RoundedCornerShape(5.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                unfocusedContainerColor = Color(0xFFF9F9F9),
-                focusedContainerColor = Color(0xFFF9F9F9),
-                unfocusedBorderColor = Color.Black.copy(alpha = 0.1f)
-            )
+            colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = Color(0xFFF9F9F9), unfocusedBorderColor = Color.Black.copy(0.1f))
         )
     }
 }
 
 @Composable
-fun SaleTypeButton(text: String, isSelected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+fun SaleTypeButton(text: String, isSelected: Boolean, modifier: Modifier, onClick: () -> Unit) {
     Box(
-        contentAlignment = Alignment.Center,
-        modifier = modifier
-            .fillMaxHeight()
-            .clip(RoundedCornerShape(10.dp))
-            .background(if (isSelected) Color.White.copy(alpha = 0.5f) else Color.Transparent)
-            .clickable { onClick() }
-    ) {
-        Text(text, color = Color.Black, fontSize = 14.sp)
-    }
+        modifier = modifier.fillMaxHeight().clip(RoundedCornerShape(10.dp))
+            .background(if (isSelected) Color.White.copy(0.5f) else Color.Transparent).clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) { Text(text, fontSize = 14.sp) }
 }
 
 @Composable
 fun UnitChip(text: String, isSelected: Boolean, onClick: () -> Unit) {
     Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .size(50.dp, 40.dp)
-            .clip(RoundedCornerShape(8.dp))
+        modifier = Modifier.size(50.dp, 40.dp).clip(RoundedCornerShape(8.dp))
             .background(if (isSelected) Color(0xFF62C3AF) else Color(0xFFF9F9F9))
-            .clickable { onClick() }
-            .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
-    ) {
-        Text(text, color = if (isSelected) Color.White else Color.Black)
-    }
+            .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp)).clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) { Text(text, color = if (isSelected) Color.White else Color.Black) }
 }

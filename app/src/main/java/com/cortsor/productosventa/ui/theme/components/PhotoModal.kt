@@ -1,5 +1,10 @@
 package com.cortsor.productosventa.ui.theme.components
 
+import android.graphics.Bitmap
+import android.graphics.ImageDecoder
+import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -30,10 +35,23 @@ import com.cortsor.productosventa.viewModel.AddProductViewModel
 @Composable
 fun PhotoModal(viewModel: AddProductViewModel, onClose: () -> Unit) {
     val context = LocalContext.current
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        if (uri != null) {
-            // Carga la foto pero no quita el fondo aún
-            viewModel.onImageSelected(context, uri)
+
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let {
+            // 1. Obtener el tipo MIME real (ej: image/jpeg, image/png)
+            val mimeType = context.contentResolver.getType(it)
+
+            val bitmap = if (Build.VERSION.SDK_INT < 28) {
+                @Suppress("DEPRECATION")
+                MediaStore.Images.Media.getBitmap(context.contentResolver, it)
+            } else {
+                val source = ImageDecoder.createSource(context.contentResolver, it)
+                ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+                    decoder.isMutableRequired = true
+                }
+            }
+            // 2. Pasar bitmap y mimeType al ViewModel
+            viewModel.processBackgroundRemoval(bitmap, mimeType)
         }
     }
 
@@ -91,16 +109,20 @@ fun PhotoModal(viewModel: AddProductViewModel, onClose: () -> Unit) {
                             .border(1.dp, Color.White.copy(alpha = 0.5f), RoundedCornerShape(19.dp))
                             .clickable { launcher.launch("image/*") }
                     ) {
-                        val currentBitmap = if (viewModel.bgMode == "sin") viewModel.noBgBitmap else viewModel.originalBitmap
-                        if (currentBitmap != null) {
-                            Image(
-                                bitmap = currentBitmap.asImageBitmap(),
-                                contentDescription = null,
-                                contentScale = ContentScale.Fit,
-                                modifier = Modifier.fillMaxSize().padding(8.dp)
-                            )
+                        if (viewModel.isProcessing) {
+                            CircularProgressIndicator(color = Color.White)
                         } else {
-                            Text("Click para subir", color = Color.White)
+                            val currentBitmap = if (viewModel.bgMode == "sin") viewModel.noBgBitmap else viewModel.originalBitmap
+                            if (currentBitmap != null) {
+                                Image(
+                                    bitmap = currentBitmap.asImageBitmap(),
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Fit,
+                                    modifier = Modifier.fillMaxSize().padding(8.dp)
+                                )
+                            } else {
+                                Text("Click para subir", color = Color.White)
+                            }
                         }
                     }
 
@@ -114,23 +136,30 @@ fun PhotoModal(viewModel: AddProductViewModel, onClose: () -> Unit) {
                             .background(Color.Black.copy(alpha = 0.4f))
                             .padding(2.dp)
                     ) {
-                        // Botón "Con fondo"
                         Box(
                             modifier = Modifier.weight(1f).fillMaxHeight()
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(if (viewModel.bgMode == "con") Color.White.copy(alpha = 0.3f) else Color.Transparent)
-                                .clickable { viewModel.bgMode = "con" }, // Solo cambia la vista a original
+                                .clickable { viewModel.bgMode = "con" },
                             contentAlignment = Alignment.Center
-                        ) { Text("Con fondo", color = Color.White) }
+                        ) { Text("Original", color = Color.White) }
 
-                        // Botón "Sin fondo"
                         Box(
                             modifier = Modifier.weight(1f).fillMaxHeight()
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(if (viewModel.bgMode == "sin") Color.White.copy(alpha = 0.3f) else Color.Transparent)
-                                .clickable { viewModel.removeBackground(context) }, // Activa el borrado de ML Kit
+                                .clickable {
+                                    if (viewModel.noBgBitmap != null) {
+                                        viewModel.bgMode = "sin"
+                                    }
+                                },
                             contentAlignment = Alignment.Center
-                        ) { Text("Sin fondo", color = Color.White) }
+                        ) {
+                            Text(
+                                "IA (Sin fondo)",
+                                color = if (viewModel.noBgBitmap != null) Color.White else Color.White.copy(alpha = 0.5f)
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.weight(1f))
