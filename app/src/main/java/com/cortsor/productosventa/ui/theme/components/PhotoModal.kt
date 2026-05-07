@@ -205,18 +205,3 @@ fun PhotoModal(viewModel: AddProductViewModel, onClose: () -> Unit) {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF000000)
-@Composable
-fun PhotoModalPreview() {
-    val mockViewModel = AddProductViewModel()
-
-    MaterialTheme {
-        // En el preview usamos una imagen de fondo para poder notar la transparencia del modal
-        Box(modifier = Modifier.fillMaxSize().background(Color.DarkGray)) {
-            PhotoModal(
-                viewModel = mockViewModel,
-                onClose = { }
-            )
-        }
-    }
-}
