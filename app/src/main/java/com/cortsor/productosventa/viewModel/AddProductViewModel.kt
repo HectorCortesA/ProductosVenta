@@ -92,16 +92,26 @@ class AddProductViewModel : ViewModel() {
     fun processBackgroundRemoval(bitmap: Bitmap, mimeType: String?) {
         isProcessing = true
         originalBitmap = bitmap
+        noBgBitmap = null
+        bgMode = "con"
         imageMime = mimeType
+
         val image = InputImage.fromBitmap(bitmap, 0)
-        val options = SubjectSegmenterOptions.Builder().enableForegroundBitmap().build()
+        val options = SubjectSegmenterOptions.Builder()
+            .enableForegroundBitmap()
+            .build()
         val segmenter = SubjectSegmentation.getClient(options)
         segmenter.process(image)
             .addOnSuccessListener { result ->
                 noBgBitmap = result.foregroundBitmap
                 isProcessing = false
+                segmenter.close()
             }
-            .addOnFailureListener { isProcessing = false }
+            .addOnFailureListener { e ->
+                e.printStackTrace()
+                isProcessing = false
+                segmenter.close()
+            }
     }
 
     private fun bitmapToBase64(bitmap: Bitmap?): String? {

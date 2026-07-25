@@ -1,5 +1,6 @@
 package com.cortsor.productosventa.ui.theme.components
 
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
@@ -48,11 +49,15 @@ fun PhotoModal(viewModel: AddProductViewModel, onClose: () -> Unit) {
 
             val bitmap = if (Build.VERSION.SDK_INT < 28) {
                 @Suppress("DEPRECATION")
-                MediaStore.Images.Media.getBitmap(context.contentResolver, it)
+                val b = MediaStore.Images.Media.getBitmap(context.contentResolver, it)
+                b.copy(Bitmap.Config.ARGB_8888, true)
             } else {
                 val source = ImageDecoder.createSource(context.contentResolver, it)
                 ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
                     decoder.isMutableRequired = true
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+                    }
                 }
             }
             // 2. Pasar bitmap y mimeType al ViewModel
@@ -205,3 +210,19 @@ fun PhotoModal(viewModel: AddProductViewModel, onClose: () -> Unit) {
     }
 }
 
+@SuppressLint("ViewModelConstructorInComposable")
+@Preview(showBackground = true, backgroundColor = 0xFF000000)
+@Composable
+fun PhotoModalPreview() {
+    val mockViewModel = AddProductViewModel()
+
+    MaterialTheme {
+        // En el preview usamos una imagen de fondo para poder notar la transparencia del modal
+        Box(modifier = Modifier.fillMaxSize().background(Color.DarkGray)) {
+            PhotoModal(
+                viewModel = mockViewModel,
+                onClose = { }
+            )
+        }
+    }
+}
