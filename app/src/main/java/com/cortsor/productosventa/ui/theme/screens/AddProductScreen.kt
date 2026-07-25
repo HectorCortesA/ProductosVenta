@@ -6,6 +6,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
@@ -17,9 +18,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.cortsor.productosventa.ui.theme.ProductosVentaTheme
 import com.cortsor.productosventa.ui.theme.components.PhotoModal
 import com.cortsor.productosventa.viewModel.AddProductViewModel
 
@@ -54,9 +57,32 @@ fun AddProductScreen(viewModel: AddProductViewModel = viewModel()) {
         }
 
         // --- SKU ---
-        FormField(label = "SKU (Opcional)", value = viewModel.sku, onValueChange = { viewModel.sku = it })
-        Spacer(modifier = Modifier.height(24.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Bottom
+        ) {
+            Box(modifier = Modifier.weight(1f)) {
+                FormField(label = "SKU (Opcional)", value = viewModel.sku, onValueChange = { viewModel.sku = it })
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(
+                onClick = { },
+                modifier = Modifier.height(50.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF9F9F9)),
+                elevation = ButtonDefaults.buttonElevation(2.dp),
+                shape = RoundedCornerShape(5.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.QrCodeScanner,
+                    contentDescription = null,
+                    tint = Color.Black,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
 
+        Spacer(modifier = Modifier.height(24.dp))
         // --- CATEGORÍA ---
         Text("Categoría", fontSize = 15.sp, color = Color.Black, modifier = Modifier.padding(bottom = 8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -148,6 +174,14 @@ fun AddProductScreen(viewModel: AddProductViewModel = viewModel()) {
 
     if (viewModel.isPhotoModalOpen) {
         PhotoModal(viewModel = viewModel, onClose = { viewModel.isPhotoModalOpen = false })
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AddProductScreenPreview() {
+    ProductosVentaTheme {
+        AddProductScreen()
     }
 }
 
