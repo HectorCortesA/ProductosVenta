@@ -24,7 +24,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.cortsor.productosventa.ui.theme.ProductosVentaTheme
 import com.cortsor.productosventa.ui.theme.components.PhotoModal
+import com.cortsor.productosventa.ui.theme.components.ScannerProducto
 import com.cortsor.productosventa.viewModel.AddProductViewModel
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 
 @Composable
 fun AddProductScreen(viewModel: AddProductViewModel = viewModel()) {
@@ -66,7 +69,7 @@ fun AddProductScreen(viewModel: AddProductViewModel = viewModel()) {
             }
             Spacer(modifier = Modifier.width(8.dp))
             Button(
-                onClick = { },
+                onClick = { viewModel.isScannerModalOpen = true },
                 modifier = Modifier.height(50.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF9F9F9)),
                 elevation = ButtonDefaults.buttonElevation(2.dp),
@@ -88,15 +91,20 @@ fun AddProductScreen(viewModel: AddProductViewModel = viewModel()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             var expanded by remember { mutableStateOf(false) }
             Box(modifier = Modifier.weight(1f)) {
-                OutlinedTextField(
-                    value = if (viewModel.isLoadingCategories) "Cargando..." else viewModel.selectedCategory,
-                    onValueChange = {},
-                    readOnly = true,
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
-                    shape = RoundedCornerShape(5.dp),
-                    trailingIcon = { IconButton(onClick = { expanded = true }) { Icon(Icons.Default.ArrowDropDown, null) } },
-                    colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = Color(0xFFF9F9F9))
-                )
+        OutlinedTextField(
+            value = if (viewModel.isLoadingCategories) "Cargando..." else viewModel.selectedCategory,
+            onValueChange = {},
+            readOnly = true,
+            modifier = Modifier.fillMaxWidth().height(50.dp),
+            shape = RoundedCornerShape(5.dp),
+            trailingIcon = { IconButton(onClick = { expanded = true }) { Icon(Icons.Default.ArrowDropDown, null) } },
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedContainerColor = Color(0xFFF9F9F9),
+                unfocusedTextColor = Color.Black,
+                focusedTextColor = Color.Black,
+                disabledTextColor = Color.Black
+            )
+        )
                 DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                     viewModel.categories.forEach { cat ->
                         DropdownMenuItem(text = { Text(cat) }, onClick = { viewModel.selectedCategory = cat; expanded = false })
@@ -175,6 +183,21 @@ fun AddProductScreen(viewModel: AddProductViewModel = viewModel()) {
     if (viewModel.isPhotoModalOpen) {
         PhotoModal(viewModel = viewModel, onClose = { viewModel.isPhotoModalOpen = false })
     }
+
+    if (viewModel.isScannerModalOpen) {
+        Dialog(
+            onDismissRequest = { viewModel.isScannerModalOpen = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            ScannerProducto(
+                onSkuScanned = { sku ->
+                    viewModel.sku = sku
+                    viewModel.isScannerModalOpen = false
+                },
+                onDismiss = { viewModel.isScannerModalOpen = false }
+            )
+        }
+    }
 }
 
 @Preview(showBackground = true)
@@ -192,9 +215,16 @@ fun FormField(label: String, value: String, onValueChange: (String) -> Unit) {
     Column {
         Text(label, fontSize = 15.sp, modifier = Modifier.padding(bottom = 8.dp))
         OutlinedTextField(
-            value = value, onValueChange = onValueChange, modifier = Modifier.fillMaxWidth().height(50.dp),
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier.fillMaxWidth().height(50.dp),
             shape = RoundedCornerShape(5.dp),
-            colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = Color(0xFFF9F9F9), unfocusedBorderColor = Color.Black.copy(0.1f))
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedContainerColor = Color(0xFFF9F9F9),
+                unfocusedBorderColor = Color.Black.copy(0.1f),
+                unfocusedTextColor = Color.Black,
+                focusedTextColor = Color.Black
+            )
         )
     }
 }

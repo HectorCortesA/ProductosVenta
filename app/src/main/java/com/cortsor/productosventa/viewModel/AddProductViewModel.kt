@@ -39,6 +39,7 @@ class AddProductViewModel : ViewModel() {
     var imageMime by mutableStateOf<String?>(null)
     var bgMode by mutableStateOf("con")
     var isPhotoModalOpen by mutableStateOf(false)
+    var isScannerModalOpen by mutableStateOf(false)
     var isProcessing by mutableStateOf(false)
 
     init {
