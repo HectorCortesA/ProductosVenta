@@ -2,7 +2,6 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
 }
-
 android {
     namespace = "com.cortsor.productosventa"
     compileSdk {
@@ -10,17 +9,14 @@ android {
             minorApiLevel = 1
         }
     }
-
     defaultConfig {
         applicationId = "com.cortsor.productosventa"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
-
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -38,22 +34,14 @@ android {
         compose = true
     }
 }
-
 dependencies {
     implementation(platform("androidx.compose:compose-bom:2024.02.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
-
-    // Navegación en Compose
     implementation("androidx.navigation:navigation-compose:2.7.7")
-
-    // ViewModel y MVVM
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
-
-    // Carga de imágenes (Coil)
     implementation("io.coil-kt:coil-compose:2.6.0")
-
     implementation("androidx.camera:camera-core:1.4.1")
     implementation("androidx.camera:camera-camera2:1.4.1")
     implementation("androidx.camera:camera-lifecycle:1.4.1")
@@ -62,8 +50,6 @@ dependencies {
     implementation("com.google.mlkit:text-recognition:16.0.1")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
-
-    // Google ML Kit para Borrado de Fondo Local (Subject Segmentation)
     implementation("com.google.android.gms:play-services-mlkit-subject-segmentation:16.0.0-beta1")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

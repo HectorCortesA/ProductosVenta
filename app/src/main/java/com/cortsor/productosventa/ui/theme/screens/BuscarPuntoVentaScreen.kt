@@ -52,7 +52,7 @@ fun BuscarPuntoVentaScreen(
             OutlinedTextField(
                 value = viewModel.ip,
                 onValueChange = { newValue ->
-                    // Filtro para solo permitir números y puntos de IP
+                    
                     val filteredIp = newValue.filter { it.isDigit() || it == '.' }
                     viewModel.ip = filteredIp
                 },
@@ -113,36 +113,34 @@ fun BuscarPuntoVentaScreen(
     }
 }
 
-/**
- * Función para configurar la IP y verificar conexión
- */
+
 private fun conectarServidor(
     ip: String,
     scope: kotlinx.coroutines.CoroutineScope,
     context: android.content.Context,
     onSuccess: () -> Unit
 ) {
-    // 1. Actualizamos la IP en el cliente Retrofit
+    
     RetrofitClient.updateIp(ip)
 
-    // 2. Intentamos un ping para ver si el servidor responde
+    
     scope.launch {
         try {
-            // Suponiendo que tienes un endpoint @GET("ping") en ApiService
+            
             RetrofitClient.instance.ping()
 
-            // Si hay respuesta, navegamos
+            
             onSuccess()
         } catch (e: Exception) {
-            // Si falla, avisamos al usuario
+            
             Toast.makeText(
                 context,
                 "No se pudo conectar al servidor en $ip:3001",
                 Toast.LENGTH_LONG
             ).show()
 
-            // Opcional: Navegar de todos modos si quieres saltarte la validación en pruebas
-            // onSuccess()
+            
+            
         }
     }
 }

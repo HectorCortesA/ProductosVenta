@@ -1,6 +1,6 @@
 package com.cortsor.productosventa.model
 
-// Lo que envías al servidor
+
 data class ProductRequest(
     val sku: String? = null,
     val name: String,
@@ -15,10 +15,10 @@ data class ProductRequest(
     val price_per_gram: Double = 0.0,
     val display_unit: String = "pz",
     val imageBase64: String? = null,
-    val image_mime: String? = null // NUEVO: Tipo de imagen (ej: "image/jpeg")
+    val image_mime: String? = null 
 )
 
-// Lo que recibes del servidor
+
 data class ProductResponse(
     val id: Int,
     val sku: String?,
@@ -30,7 +30,7 @@ data class ProductResponse(
     val min_stock_grams: Double?,
     val display_unit: String,
     val imageBase64: String?,
-    val image_mime: String? // NUEVO
+    val image_mime: String? 
 )
 data class CategoryResponse(
     val category: String

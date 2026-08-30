@@ -10,7 +10,7 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 
-// 1. DEFINICIÓN DE RUTAS (Tu Interfaz)
+
 interface ApiService {
     @GET("products")
     suspend fun getProducts(): List<ProductResponse>
@@ -24,21 +24,16 @@ interface ApiService {
     @GET("ping")
     suspend fun ping(): Map<String, Any>
 }
-
-// 2. CONFIGURACIÓN DINÁMICA (Tu Cliente)
 object RetrofitClient {
     private var retrofit: Retrofit? = null
     private var currentIp: String = "127.0.0.1"
 
-    // Esta es la función que llamas desde tu pantalla "Buscar Punto"
     fun updateIp(ip: String) {
         if (currentIp != ip) {
             currentIp = ip
-            retrofit = null // Al ponerlo en null, forzamos que se reconecte a la nueva IP
+            retrofit = null 
         }
     }
-
-    // ✅ CORRECCIÓN: Quitamos el import de Firebase que tenías aquí
     val instance: ApiService
         get() {
             if (retrofit == null) {
@@ -49,7 +44,6 @@ object RetrofitClient {
                     .addConverterFactory(GsonConverterFactory.create())
                     .build()
             }
-            // Aquí usamos la interfaz ApiService definida arriba
             return retrofit!!.create(ApiService::class.java)
         }
 }

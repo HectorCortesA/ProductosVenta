@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 
 class AddProductViewModel : ViewModel() {
-    // Estados del formulario
+    
     var sku by mutableStateOf("")
     var name by mutableStateOf("")
     var description by mutableStateOf("")
@@ -26,14 +26,14 @@ class AddProductViewModel : ViewModel() {
     var saleType by mutableStateOf("unit")
     var sellUnit by mutableStateOf("pz")
 
-    // Gestión de Categorías
+    
     var categories = mutableStateListOf<String>()
     var selectedCategory by mutableStateOf("General")
     var isAddingCategory by mutableStateOf(false)
     var newCategoryName by mutableStateOf("")
     var isLoadingCategories by mutableStateOf(false)
 
-    // Imagen
+    
     var originalBitmap by mutableStateOf<Bitmap?>(null)
     var noBgBitmap by mutableStateOf<Bitmap?>(null)
     var imageMime by mutableStateOf<String?>(null)
@@ -50,17 +50,17 @@ class AddProductViewModel : ViewModel() {
         viewModelScope.launch {
             isLoadingCategories = true
             try {
-                // 1. Obtenemos la lista de objetos del servidor
+                
                 val response: List<CategoryResponse> = RetrofitClient.instance.getCategories()
 
                 categories.clear()
 
-                // 2. Extraemos el NOMBRE (it.category)
+                
                 val names: List<String> = response.map { it.category }
 
                 if (names.isNotEmpty()) {
                     categories.addAll(names)
-                    // Seleccionar la primera por defecto si no hay una válida seleccionada
+                    
                     if (selectedCategory == "General" || !names.contains(selectedCategory)) {
                         selectedCategory = names[0]
                     }

@@ -5,13 +5,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 
-/**
- * Estado del modal ScannerProducto.
- *
- * No maneja directamente la cámara (eso vive en la Composable, atado al
- * lifecycle de CameraX); solo guarda qué se ha detectado y en qué modo
- * está la pantalla (cámara real, error, o simulada).
- */
 class ScannerProductoViewModel : ViewModel() {
 
     var errorMsg by mutableStateOf<String?>(null)

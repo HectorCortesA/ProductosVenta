@@ -44,7 +44,7 @@ fun PhotoModal(viewModel: AddProductViewModel, onClose: () -> Unit) {
 
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
-            // 1. Obtener el tipo MIME real (ej: image/jpeg, image/png)
+            
             val mimeType = context.contentResolver.getType(it)
 
             val bitmap = if (Build.VERSION.SDK_INT < 28) {
@@ -60,7 +60,7 @@ fun PhotoModal(viewModel: AddProductViewModel, onClose: () -> Unit) {
                     }
                 }
             }
-            // 2. Pasar bitmap y mimeType al ViewModel
+            
             viewModel.processBackgroundRemoval(bitmap, mimeType)
         }
     }
@@ -69,40 +69,40 @@ fun PhotoModal(viewModel: AddProductViewModel, onClose: () -> Unit) {
         onDismissRequest = onClose,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        // --- INICIO CÓDIGO PARA BLUR Y QUITAR EL FONDO OSCURO GENÉRICO ---
+        
         val view = LocalView.current
         SideEffect {
             val window = (view.parent as? DialogWindowProvider)?.window
             window?.let {
-                // Quita la sombra genérica
+                
                 it.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
 
-                // Aplica el blur al fondo de la app (Solo Android 12+)
+                
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     it.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
-                    it.attributes.blurBehindRadius = 50 // Intensidad del blur
+                    it.attributes.blurBehindRadius = 50 
                 }
 
                 it.setBackgroundDrawableResource(android.R.color.transparent)
             }
         }
-        // --- FIN CÓDIGO PARA BLUR ---
+        
 
-        // Contenedor base que ocupa toda la pantalla
+        
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Transparent),
             contentAlignment = Alignment.BottomCenter
         ) {
-            // Tu Modal real con el color negro semitransparente
+            
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .fillMaxHeight(0.85f)
                     .clip(RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp))
-                    .background(Color.Black.copy(alpha = 0.4f)) // Fondo negro transparente con el blur detrás
-                    // Opcional: Agregar un pequeño borde ayuda a definir el cristal
+                    .background(Color.Black.copy(alpha = 0.4f)) 
+                    
                     .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp))
             ) {
                 Column(
@@ -217,7 +217,7 @@ fun PhotoModalPreview() {
     val mockViewModel = AddProductViewModel()
 
     MaterialTheme {
-        // En el preview usamos una imagen de fondo para poder notar la transparencia del modal
+        
         Box(modifier = Modifier.fillMaxSize().background(Color.DarkGray)) {
             PhotoModal(
                 viewModel = mockViewModel,

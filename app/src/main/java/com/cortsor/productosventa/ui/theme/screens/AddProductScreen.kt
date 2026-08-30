@@ -86,25 +86,26 @@ fun AddProductScreen(viewModel: AddProductViewModel = viewModel()) {
         }
 
         Spacer(modifier = Modifier.height(24.dp))
+
         // --- CATEGORÍA ---
         Text("Categoría", fontSize = 15.sp, color = Color.Black, modifier = Modifier.padding(bottom = 8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             var expanded by remember { mutableStateOf(false) }
             Box(modifier = Modifier.weight(1f)) {
-        OutlinedTextField(
-            value = if (viewModel.isLoadingCategories) "Cargando..." else viewModel.selectedCategory,
-            onValueChange = {},
-            readOnly = true,
-            modifier = Modifier.fillMaxWidth().height(50.dp),
-            shape = RoundedCornerShape(5.dp),
-            trailingIcon = { IconButton(onClick = { expanded = true }) { Icon(Icons.Default.ArrowDropDown, null) } },
-            colors = OutlinedTextFieldDefaults.colors(
-                unfocusedContainerColor = Color(0xFFF9F9F9),
-                unfocusedTextColor = Color.Black,
-                focusedTextColor = Color.Black,
-                disabledTextColor = Color.Black
-            )
-        )
+                OutlinedTextField(
+                    value = if (viewModel.isLoadingCategories) "Cargando..." else viewModel.selectedCategory,
+                    onValueChange = {},
+                    readOnly = true,
+                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    shape = RoundedCornerShape(5.dp),
+                    trailingIcon = { IconButton(onClick = { expanded = true }) { Icon(Icons.Default.ArrowDropDown, null) } },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedContainerColor = Color(0xFFF9F9F9),
+                        unfocusedTextColor = Color.Black,
+                        focusedTextColor = Color.Black,
+                        disabledTextColor = Color.Black
+                    )
+                )
                 DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                     viewModel.categories.forEach { cat ->
                         DropdownMenuItem(text = { Text(cat) }, onClick = { viewModel.selectedCategory = cat; expanded = false })
@@ -120,7 +121,7 @@ fun AddProductScreen(viewModel: AddProductViewModel = viewModel()) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- TIPO VENTA ---
+        // --- TIPO DE VENTA ---
         Row(modifier = Modifier.fillMaxWidth().height(48.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFD9D9D9)).padding(4.dp)) {
             SaleTypeButton("Por pieza", viewModel.saleType == "unit", Modifier.weight(1f)) {
                 viewModel.saleType = "unit"
@@ -139,7 +140,7 @@ fun AddProductScreen(viewModel: AddProductViewModel = viewModel()) {
         FormField(label = "Descripción", value = viewModel.description, onValueChange = { viewModel.description = it })
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- PRECIOS Y STOCK MÍNIMO ---
+        // --- CAMPOS DINÁMICOS SEGÚN TIPO DE VENTA ---
         if (viewModel.saleType == "unit") {
             FormField(label = "Precio", value = viewModel.price, onValueChange = { viewModel.price = it })
             Spacer(modifier = Modifier.height(24.dp))
@@ -207,8 +208,6 @@ fun AddProductScreenPreview() {
         AddProductScreen()
     }
 }
-
-// --- COMPONENTES AUXILIARES ---
 
 @Composable
 fun FormField(label: String, value: String, onValueChange: (String) -> Unit) {
